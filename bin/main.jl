@@ -26,18 +26,19 @@ Threads.@spawn :interactive begin
     while true
         elapsed = tic - time()
         tic = time()
-        (elapsed < 1) && sleep(1 - elapsed)
+        # (elapsed < 1) && sleep(1 - elapsed)
         @info "Elapsed time in color loop: $elapsed"
+        sleep(1)
         color[] = color[] == "red" ? "blue" : "red"
 
         # Log when number of listeners changes - this is important to know
         # so that we can understand if the Observable architecture used here makes
         # sense, or if we should use a different architecture, like channels or 
         # global arrays that get polled every frame.
-        if number_of_listeners != length(color.listeners)
-            number_of_listeners = length(color.listeners)
-            @info "Number of listeners on color observable changed to $number_of_listeners"
-        end
+        # if number_of_listeners != length(color.listeners)
+        #     number_of_listeners = length(color.listeners)
+        #     @info "Number of listeners on color observable changed to $number_of_listeners"
+        # end
     end
 end
 @info "Instantiated async task to change color every second"
