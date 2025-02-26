@@ -5,6 +5,10 @@ single-producer, multiple-session architecture with Bonito.
 There is a global Observable that 
 =#
 
+@info "Starting BonitoJuliaHubTest"
+@info "Number of threads: $(Threads.nthreads())"
+@info "Number of CPU threads: $(Sys.CPU_THREADS)"
+
 using Bonito, Observables, WGLMakie
 # using Bonito: @js_str, onjs, Button, TextField, Slider, linkjs, Session, App
 using Bonito.DOM
@@ -14,16 +18,23 @@ using Bonito.DOM
 color = Observable("red")
 number_of_listeners = 0
 
-Threads.@spawn while true
-    sleep(1)
-    color[] = color[] == "red" ? "blue" : "red"
-    # Log when number of listeners changes - this is important to know
-    # so that we can understand if the Observable architecture used here makes
-    # sense, or if we should use a different architecture, like channels or 
-    # global arrays that get polled every frame.
-    if number_of_listeners != length(color.listeners)
-        number_of_listeners = length(color.listeners)
-        @info "Number of listeners changed to $number_of_listeners"
+
+Threads.@spawn begin
+    tic = time()
+    while true
+        elapsed = tic - time()
+        tic = time()
+        (elapsed < 1) && sleep(1 - elapsed)
+        color[] = color[] == "red" ? "blue" : "red"
+
+        # Log when number of listeners changes - this is important to know
+        # so that we can understand if the Observable architecture used here makes
+        # sense, or if we should use a different architecture, like channels or 
+        # global arrays that get polled every frame.
+        # if number_of_listeners != length(color.listeners)
+        #     number_of_listeners = length(color.listeners)
+        #     @info "Number of listeners changed to $number_of_listeners"
+        # end
     end
 end
 @info "Instantiated async task to change color every second"
@@ -55,11 +66,21 @@ else
     @info "Using default port: $port"
 end
 
+BONITO_PROXY = get(ENV, "BONITO_PROXY", "")
+if isempty(BONITO_PROXY)
+    @info "No Bonito proxy found in environment variable BONITO_PROXY"
+else
+    @info "Using Bonito proxy from BONITO_PROXY: $BONITO_PROXY"
+end
+
 # Construct the Bonito server
-@info "Constructing Bonito server on 0.0.0.0:$port"
-server = Bonito.Server(app, "0.0.0.0", parse(Int, port); proxy_url = "https://trybonito.apps.internal.juliahub.com", verbose = 3)
-# Important Note: You might want to set the keyword argument `proxy_url` above in case
-# you have a reverse proxy (like nginx or caddy) in front of the Bonito instance.
+# JuliaHub uses nginx as a proxy server,
+# so we need to tell Bonito what the final URL will be.
+# If you select the DNS on the app,
+# then you must provide Bonito the environment variable BONITO_PROXY
+# set to "$DNS.internal.juliahub.com" (or your juliahub.com subdomain).
+@info "Constructing Bonito server on 0.0.0.0:$port $(isempty(BONITO_PROXY) ? "" : "with proxy $BONITO_PROXY")"
+server = Bonito.Server(app, "0.0.0.0", parse(Int, port); proxy_url = BONITO_PROXY, verbose = 3)
 
 # Start the server
 @info "Starting Bonito server"
