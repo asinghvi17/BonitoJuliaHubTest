@@ -6,11 +6,8 @@ There is a global Observable that
 =#
 
 @info "Starting BonitoJuliaHubTest"
-@info "Number of threads: $(Threads.nthreads())"
-@info "Number of CPU threads: $(Sys.CPU_THREADS)"
-@info "Number of threadpools: $(Threads.nthreadpools())"
-@info "Running on threadpool $(Threads.threadpool()) with $(Threads.threadpoolsize(Threads.threadpool())) threads."
-
+@info "Thread configuration" Threads.nthreads() Sys.CPU_THREADS Threads.nthreadpools() Threads.threadpool() Threads.threadpoolsize(Threads.threadpool())
+@info environment=ENV
 
 using Bonito, Observables, WGLMakie
 # using Bonito: @js_str, onjs, Button, TextField, Slider, linkjs, Session, App
@@ -21,23 +18,26 @@ using Bonito.DOM
 color = Observable("red")
 number_of_listeners = 0
 
-
-Threads.@spawn begin
+# Make sure the simulation loop runs on the interactive threadpool
+# so that it does not conflict with the main (`:default`) threadpool
+# and can run as fast as it needs to.
+Threads.@spawn :interactive begin
     tic = time()
     while true
         elapsed = tic - time()
         tic = time()
         (elapsed < 1) && sleep(1 - elapsed)
+        @info "Elapsed time in color loop: $elapsed"
         color[] = color[] == "red" ? "blue" : "red"
 
         # Log when number of listeners changes - this is important to know
         # so that we can understand if the Observable architecture used here makes
         # sense, or if we should use a different architecture, like channels or 
         # global arrays that get polled every frame.
-        # if number_of_listeners != length(color.listeners)
-        #     number_of_listeners = length(color.listeners)
-        #     @info "Number of listeners changed to $number_of_listeners"
-        # end
+        if number_of_listeners != length(color.listeners)
+            number_of_listeners = length(color.listeners)
+            @info "Number of listeners on color observable changed to $number_of_listeners"
+        end
     end
 end
 @info "Instantiated async task to change color every second"
@@ -48,8 +48,13 @@ end
 # global task that runs once but must be displayed in 
 # multiple sessions.
 app = App() do session::Session
-    @info "Creating app for session "
-    f, a, p = lines(rand(10); color = color)
+    @info "Creating app for session $(session.id)"
+    # Spawn the figure on a different thread in the 
+    # default threadpool.  This means that the figure's 
+    # renderloop runs on an arbitrary thread and is not
+    # blocking the main thread.
+    task = Threads.@spawn :default lines(rand(10); color = color)
+    f, a, p = fetch(task)
     return f
 end
 
@@ -83,7 +88,7 @@ end
 # then you must provide Bonito the environment variable BONITO_PROXY
 # set to "$DNS.internal.juliahub.com" (or your juliahub.com subdomain).
 @info "Constructing Bonito server on 0.0.0.0:$port $(isempty(BONITO_PROXY) ? "" : "with proxy $BONITO_PROXY")"
-server = Bonito.Server(app, "0.0.0.0", parse(Int, port); proxy_url = BONITO_PROXY, verbose = 3)
+server = Bonito.Server(app, "0.0.0.0", parse(Int, port); proxy_url = BONITO_PROXY, verbose = 1)
 
 # Start the server
 @info "Starting Bonito server"
