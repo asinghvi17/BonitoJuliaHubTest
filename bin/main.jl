@@ -44,8 +44,7 @@ end
 # then you must provide Bonito the environment variable BONITO_PROXY
 # set to "$DNS.internal.juliahub.com" (or your juliahub.com subdomain).
 @info "Constructing Bonito server on 0.0.0.0:$port $(isempty(proxy) ? "" : "with proxy $proxy")"
-server = Bonito.Server("0.0.0.0", parse(Int, port); proxy_url = proxy, verbose = 1)
-
+server = Bonito.Server("0.0.0.0", parse(Int, port); proxy_url = proxy, verbose = -1)
 
 # Make sure the simulation loop runs on the interactive threadpool
 # so that it does not conflict with the main (`:default`) threadpool
@@ -89,14 +88,17 @@ plot_app = App(; threaded = true) do session::Session
     f, a, p = lines(rand(10); color = color)
     return f
 end
+
 route!(server, "/" => plot_app)
 
 # Apps can also return DOM divs
-page_404 = App() do session, request
-    return Bonito.DOM.div("no page for $(request.target)")
-end
+# ```julia
+# page_404 = App() do session, request
+#     return Bonito.DOM.div("no page for $(request.target)")
+# end
 # You can use string (paths), or a regex
-route!(server, r".*" => page_404)
+# route!(server, r".*" => page_404)
+# ```
 
 # Now, we may also want to serve some data
 # Let's serve a text response indicating the current color
