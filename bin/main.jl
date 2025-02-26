@@ -8,6 +8,9 @@ There is a global Observable that
 @info "Starting BonitoJuliaHubTest"
 @info "Number of threads: $(Threads.nthreads())"
 @info "Number of CPU threads: $(Sys.CPU_THREADS)"
+@info "Number of threadpools: $(Threads.nthreadpools())"
+@info "Running on threadpool $(Threads.threadpool()) with $(Threads.threadpoolsize(Threads.threadpool())) threads."
+
 
 using Bonito, Observables, WGLMakie
 # using Bonito: @js_str, onjs, Button, TextField, Slider, linkjs, Session, App
