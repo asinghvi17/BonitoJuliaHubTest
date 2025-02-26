@@ -2,7 +2,14 @@
 This is a simple test case and example of the 
 single-producer, multiple-session architecture with Bonito.
 
-There is a global Observable that 
+There is a global Observable that changes color every second, 
+which is shared across multiple user sessions. Each session creates 
+a plot that displays this shared color, demonstrating how to handle 
+shared state in a web application.
+
+There are two endpoints: 
+- `/` which is the main plot page
+- `/color` which returns an HTTP 200 response with the current color as the body.
 =#
 
 @info "Starting BonitoJuliaHubTest"
@@ -22,6 +29,8 @@ number_of_listeners = 0
 
 # Get the DNS and port from environment variables,
 # and log the values we are using.
+# You don't have to do the logging bit at all - it's just
+# so we can show it in the example app.
 port = get(ENV, "PORT", "8081") # it's guaranteed this exists on JuliaHub
 
 if haskey(ENV, "PORT")
@@ -37,7 +46,7 @@ else
     @info "Using Bonito proxy from JULIAHUB_APP_URL: $proxy"
 end
 
-# Construct the Bonito server
+# Construct the Bonito server!
 # JuliaHub uses nginx as a proxy server,
 # so we need to tell Bonito what the final URL will be.
 # If you select the DNS on the app,
@@ -74,11 +83,11 @@ end
 # In Bonito, you can create an HTML page / app by using the `App`
 # constructor.  The way you link an app to an HTTP endpoint is 
 # by using the `route!` function.
-# Create a Bonito app for each session,
+# Here, we reate a Bonito app for each session,
 # that creates a plot where the color is linked to the 
-# global `color` Observable.  This is a proxy for any
-# global task that runs once but must be displayed in 
-# multiple sessions.
+# global `color` Observable.  This shows how to display plots
+# where the plot is per-session but the data is shared across
+# all sessions of this particular app / server.
 plot_app = App(; threaded = true) do session::Session
     @info "Creating app for session $(session.id)"
     # Spawn the figure on a different thread in the 
@@ -88,7 +97,7 @@ plot_app = App(; threaded = true) do session::Session
     f, a, p = lines(rand(10); color = color)
     return f
 end
-
+# Now we link the app to the HTTP endpoint `/`
 route!(server, "/" => plot_app)
 
 # Apps can also return DOM divs
@@ -100,7 +109,8 @@ route!(server, "/" => plot_app)
 # route!(server, r".*" => page_404)
 # ```
 
-# Now, we may also want to serve some data
+# We may also want to serve some data over HTTP alongside the plot,
+# like a JSON response or a text response.
 # Let's serve a text response indicating the current color
 # at the "/color" endpoint.
 
@@ -122,7 +132,7 @@ route!(server, "/color" => color_handler)
 # Start the server
 @info "Starting Bonito server"
 Bonito.HTTPServer.start(server)
-# Bonito.HTTPServer.route!(server, "/" => app) # Overwrite app after changing it
+
 @info "Server successfully started, waiting on connections"
 
 # Wait for the server to exit, because if running in an app, the app will
