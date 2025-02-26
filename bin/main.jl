@@ -74,11 +74,11 @@ else
     @info "Using default port: $port"
 end
 
-BONITO_PROXY = get(ENV, "BONITO_PROXY", "")
-if isempty(BONITO_PROXY)
-    @info "No Bonito proxy found in environment variable BONITO_PROXY"
+proxy = get(ENV, "JULIAHUB_APP_URL", "")
+if isempty(proxy)
+    @info "No Bonito proxy found in environment variable JULIAHUB_APP_URL"
 else
-    @info "Using Bonito proxy from BONITO_PROXY: $BONITO_PROXY"
+    @info "Using Bonito proxy from JULIAHUB_APP_URL: $proxy"
 end
 
 # Construct the Bonito server
@@ -87,8 +87,8 @@ end
 # If you select the DNS on the app,
 # then you must provide Bonito the environment variable BONITO_PROXY
 # set to "$DNS.internal.juliahub.com" (or your juliahub.com subdomain).
-@info "Constructing Bonito server on 0.0.0.0:$port $(isempty(BONITO_PROXY) ? "" : "with proxy $BONITO_PROXY")"
-server = Bonito.Server(app, "0.0.0.0", parse(Int, port); proxy_url = BONITO_PROXY, verbose = 1)
+@info "Constructing Bonito server on 0.0.0.0:$port $(isempty(proxy) ? "" : "with proxy $proxy")"
+server = Bonito.Server(app, "0.0.0.0", parse(Int, port); proxy_url = proxy, verbose = 1)
 
 # Start the server
 @info "Starting Bonito server"
