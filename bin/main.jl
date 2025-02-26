@@ -57,7 +57,7 @@ end
 
 # Construct the Bonito server
 @info "Constructing Bonito server on 0.0.0.0:$port"
-server = Bonito.Server(app, "0.0.0.0", parse(Int, port); verbose = 3)
+server = Bonito.Server(app, "0.0.0.0", parse(Int, port); proxy_url = "https://trybonito.apps.internal.juliahub.com", verbose = 3)
 # Important Note: You might want to set the keyword argument `proxy_url` above in case
 # you have a reverse proxy (like nginx or caddy) in front of the Bonito instance.
 
