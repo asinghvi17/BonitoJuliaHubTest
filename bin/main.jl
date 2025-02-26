@@ -47,23 +47,17 @@ end
 
 # Get the DNS and port from environment variables,
 # and log the values we are using.
-dns = get(ENV, "BONITO_DNS", "trybonito")
-port = get(ENV, "BONITO_PORT", "8081")
-if haskey(ENV, "BONITO_DNS")
-    @info "Using DNS from environment variable BONITO_DNS: $dns"
-else
-    @info "Using default DNS: $dns"
-end
+port = get(ENV, "PORT", "8081") # it's guaranteed this exists on JuliaHub
 
-if haskey(ENV, "BONITO_PORT")
-    @info "Using port from environment variable BONITO_PORT: $port"
+if haskey(ENV, "PORT")
+    @info "Using port from environment variable PORT: $port"
 else
     @info "Using default port: $port"
 end
 
 # Construct the Bonito server
-@info "Constructing Bonito server on $(dns).apps.internal.juliahub.com:$port"
-server = Bonito.Server(app, "$(dns).apps.internal.juliahub.com", parse(Int, port); verbose = 3)
+@info "Constructing Bonito server on 0.0.0.0:$port"
+server = Bonito.Server(app, "0.0.0.0", parse(Int, port); verbose = 3)
 # Important Note: You might want to set the keyword argument `proxy_url` above in case
 # you have a reverse proxy (like nginx or caddy) in front of the Bonito instance.
 
