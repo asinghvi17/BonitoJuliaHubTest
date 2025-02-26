@@ -20,7 +20,7 @@ if isdefined(Main, :server)
     close(server)
 end
 
-server = Bonito.Server(app, "trybonito.apps.internal.juliahub.com", 8081)
+server = Bonito.Server(app, "$(get(ENV, "BONITO_DNS", "trybonito")).apps.internal.juliahub.com", parse(Int, get(ENV, "BONITO_PORT", "8081")))
 # Important Note: You might want to set the keyword argument `proxy_url` above in case
 # you have a reverse proxy (like nginx or caddy) in front of the Bonito instance.
 Bonito.HTTPServer.start(server)
