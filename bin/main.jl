@@ -13,6 +13,7 @@ There are two endpoints:
 =#
 
 @info "Starting BonitoJuliaHubTest"
+@info "Current file is:" @__FILE__
 @info "Thread configuration" Threads.nthreads() Sys.CPU_THREADS Threads.nthreadpools() Threads.threadpool() Threads.threadpoolsize(Threads.threadpool())
 @info environment=ENV
 
